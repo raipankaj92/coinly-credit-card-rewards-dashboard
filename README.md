@@ -4,7 +4,8 @@ Coinly is a planned consumer credit-card bill payment and rewards dashboard for 
 
 ## Planned Stack
 
-- Frontend: Next.js App Router, React, TypeScript, Tailwind CSS, and Recharts for later analytics
+- Frontend: Next.js App Router, React, TypeScript, and Tailwind CSS
+- Planned analytics visualization: Recharts (not installed in Stage 1)
 - Backend: Python, FastAPI, Pydantic, SQLAlchemy 2.x, and a PostgreSQL-compatible psycopg driver
 - Database: PostgreSQL 16+ (PostgreSQL 18 preferred)
 

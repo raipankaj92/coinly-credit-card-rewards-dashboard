@@ -14,7 +14,7 @@ Inspected on 2026-08-25 from the supplied `transactions (2) (1).json`. The sourc
 ## Distinct Categorical Values
 
 - Statuses: `FAILED`, `PENDING`, `SUCCESS`
-- Categories: 11 named values plus 200 blank/missing values: `Education`, `Entertainment`, `Food & Dining`, `Fuel`, `Groceries`, `Health`, `Insurance`, `Shopping`, `Travel`, `Utilities`
+- Categories: 10 named values: `Shopping` (1,209), `Travel` (1,213), `Utilities` (1,014), `Food & Dining` (1,009), `Health` (998), `Education` (992), `Entertainment` (983), `Groceries` (979), `Fuel` (780), and `Insurance` (623). There are also 150 `null` category values and 50 empty-string (`""`) category values.
 - Payment methods: `Credit Card`, `Debit Card`, `Netbanking`, `UPI`
 
 ## Field Completeness and Runtime Types
@@ -24,7 +24,7 @@ Inspected on 2026-08-25 from the supplied `transactions (2) (1).json`. The sourc
 | `id` | 0 | string | 9,960 |
 | `timestamp` | 0 | string, integer | 9,611 |
 | `merchant` | 0 | string | 49 |
-| `category` | 200 | string | 11 non-blank |
+| `category` | 200 (150 `null`, 50 empty string) | string, null | 10 named categories |
 | `amount` | 0 | decimal number, string | 9,422 |
 | `currency` | 0 | string | 1 |
 | `status` | 0 | string | 3 |
@@ -34,9 +34,11 @@ The distinct-value count for `timestamp` is lower than the record count, so time
 
 ## Timestamp Formats
 
+- 8,993 timestamp values are strings, and 1,007 are integers.
 - 7,437 values are ISO-like strings containing `T`, including examples such as `2025-10-03T21:03:27Z`.
-- 841 values are space-separated or date-only strings containing a space or no time separator, including examples such as `2025-07-03` and `2025-09-22`.
-- 1,722 values are in the `other` bucket. This includes 1,007 integer timestamp values, with examples `1768265109000`, `1766522125000`, and `1781995324000`, plus values that do not match the simple text classification above.
+- 841 values are space-separated datetime strings, including examples such as `2025-09-22 21:03:27`.
+- 715 values are date-only strings, including examples such as `2025-07-03`.
+- 1,007 values are numeric epoch-like integers, including examples `1768265109000`, `1766522125000`, and `1781995324000`.
 
 A date parsing and timezone policy is required during normalization.
 
