@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Next.js
+.next/
+out/
+
+# Test and coverage output
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Local tooling
+.vscode/
+.DS_Store
