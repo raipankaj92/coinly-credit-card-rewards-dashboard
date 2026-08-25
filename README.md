@@ -15,9 +15,9 @@ The frontend and backend will remain separate applications. The FastAPI backend 
 
 ## Current Status
 
-Stage 2 is complete: PostgreSQL models, metadata-based schema initialization, a deterministic seed command, and focused normalization tests are available.
+Stage 3 backend API is complete: transaction browsing, wallet retrieval, reward catalogue, and atomic reward redemption are available over FastAPI.
 
-Not implemented yet: API endpoints, transaction table, filters, search, sorting, analytics, rewards UI, redemption flow, frontend application, deployment, and demo video.
+Not implemented yet: frontend application, transaction table UI, analytics, charts, deployment, and demo video.
 
 See [database/DATA_QUALITY.md](database/DATA_QUALITY.md), [ASSUMPTIONS.md](ASSUMPTIONS.md), and [DECISIONS.md](DECISIONS.md) for the current groundwork.
 
@@ -51,6 +51,23 @@ Run normalization tests from the project root with:
 ```powershell
 backend/.venv/Scripts/python -m unittest discover -s backend/tests -p "test_*.py"
 ```
+
+## API
+
+Start the backend from the project root after setting `DATABASE_URL`:
+
+```powershell
+backend/.venv/Scripts/python -m uvicorn app.main:app --app-dir backend --reload
+```
+
+The API is available at `http://127.0.0.1:8000` and permits the local frontend origin `http://localhost:3000`.
+
+- `GET /health` returns the API health status.
+- `GET /api/transactions` supports `page`, `page_size`, `search`, `category`, `status`, `min_amount`, `max_amount`, `start_date`, `end_date`, `sort_by` (`timestamp` or `amount`), and `sort_order` (`asc` or `desc`).
+- `GET /api/transactions/{transaction_id}` returns a single transaction or `404`.
+- `GET /api/wallet` returns the single demo wallet.
+- `GET /api/rewards` returns active rewards.
+- `POST /api/rewards/{reward_id}/redeem` locks the wallet row, checks its balance, inserts a redemption, and updates the balance atomically. It returns `404` for missing/inactive rewards or a missing wallet and `409` for insufficient coins.
 
 ## Source Inputs
 

@@ -48,6 +48,14 @@ Use SQLAlchemy metadata to create the `transactions`, `rewards`, `wallets`, and 
 
 The seed command validates all source records before truncating application tables. It then truncates, resets identities, inserts the full dataset and demo records, and validates counts in one PostgreSQL transaction. This prevents accumulated duplicate imports on rerun.
 
+## Server-Side Transaction Queries
+
+Transaction pagination, filtering, merchant/source-ID search, and sorting are implemented as SQLAlchemy PostgreSQL queries. The API counts and fetches only the requested page, rather than loading all 10,000 records into application memory. Sort columns are restricted to an allowlist to keep query construction safe and predictable.
+
+## Atomic Redemption
+
+Reward redemption locks the single wallet row with `SELECT ... FOR UPDATE` inside one database transaction. The balance deduction and redemption insert either both commit or both roll back, preventing concurrent requests from overspending the same wallet balance.
+
 ## Stage Scope Boundary
 
-Stage 2 implements only the PostgreSQL foundation and seed pipeline. API routes, services for HTTP workflows, and UI remain for later stages.
+Stage 3 adds the backend API only. Frontend pages, transaction-table UI, charts, and deployment remain for later stages.
