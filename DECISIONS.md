@@ -2,68 +2,97 @@
 
 ## Next.js + TypeScript
 
-Use Next.js with the App Router and TypeScript for the frontend. This matches the preferred framework, provides a clear application structure, and supports typed reusable UI components.
+I used Next.js with the App Router and TypeScript for the frontend. It gives me a structured frontend setup and lets me keep the dashboard components and API responses type-safe.
 
 ## FastAPI
 
-Use FastAPI for the Python API. It provides typed request and response contracts, validation, sensible HTTP error handling, and a small surface suitable for the assignment.
+I used FastAPI for the backend because the project is Python-based and the framework makes it straightforward to define API routes, validate inputs, and return proper HTTP responses.
 
 ## PostgreSQL
 
-Use PostgreSQL as the production database because the assignment requires a real relational database and explicitly excludes SQLite, MongoDB, and in-memory storage.
+I used PostgreSQL as the database because the assignment requires a relational database and does not allow SQLite, MongoDB, or in-memory storage.
 
 ## SQLAlchemy 2.x
 
-Use SQLAlchemy 2.x for database access and schema-aligned relational queries. It keeps the data-access layer explicit while supporting PostgreSQL cleanly.
+I used SQLAlchemy 2.x for database access and ORM models. This keeps the database models and queries organized while working cleanly with PostgreSQL.
 
-## Separated Frontend and Backend
+## Separate Frontend and Backend
 
-Keep the Next.js frontend and FastAPI backend as separate applications. This preserves clear ownership boundaries and allows each side to be developed and deployed independently.
-
-## Planned Server-Side Transaction Querying
-
-Transaction filtering, merchant search, sorting, and pagination are planned for the backend. Server-side querying avoids shipping all approximately 10,000 rows to the browser and gives the table a predictable performance path.
-
-## Internal Transaction Primary Key
-
-Use an internal PostgreSQL primary key for `transactions` and store the JSON `id` as a non-unique, indexed `source_transaction_id`. The source contains duplicate IDs, so treating it as a primary key would discard or reject legitimate source occurrences.
-
-## Decimal Financial Amounts
-
-Store transaction amounts as `NUMERIC(14,2)` and normalize source values with Python `Decimal`. This safely accommodates the observed `999999999` maximum without binary floating-point rounding and retains negative source amounts.
-
-## Timezone-Aware Timestamp Normalization
-
-Store timestamps as PostgreSQL timezone-aware timestamps. ISO values preserve their offset and normalize to UTC; epoch milliseconds convert to UTC; date-only and source local-looking values are interpreted as UTC because the source provides no timezone.
-
-## Seed-Time Source Normalization
-
-Normalize source records in the seed pipeline rather than editing the protected JSON. The seed converts numeric strings to `Decimal`, normalizes statuses, converts null, empty, and absent categories to SQL `NULL`, and fails with a record index, source ID, and field name if a value cannot be safely normalized.
-
-## PostgreSQL Foundation
-
-Use SQLAlchemy metadata to create the `transactions`, `rewards`, `wallets`, and `redemptions` tables. `redemptions.reward_id` is a foreign key to `rewards.id`; the wallet is intentionally a single demo wallet because the assignment does not require authentication. The transaction internal ID uses PostgreSQL `BIGSERIAL` semantics through SQLAlchemy's `BigInteger` primary key.
-
-## Deterministic Reseeding
-
-The seed command validates all source records before truncating application tables. It then truncates, resets identities, inserts the full dataset and demo records, and validates counts in one PostgreSQL transaction. This prevents accumulated duplicate imports on rerun.
+I kept the Next.js frontend and FastAPI backend as separate applications. The frontend is responsible for the UI, while the backend handles database access, business logic, filtering, analytics, and rewards.
 
 ## Server-Side Transaction Queries
 
-Transaction pagination, filtering, merchant/source-ID search, and sorting are implemented as SQLAlchemy PostgreSQL queries. The API counts and fetches only the requested page, rather than loading all 10,000 records into application memory. Sort columns are restricted to an allowlist to keep query construction safe and predictable.
+I implemented transaction filtering, searching, sorting, and pagination on the backend instead of loading all 10,000 transactions into the browser. The API only returns the page of data that the user requests.
 
-## Atomic Redemption
+## Internal Transaction ID
 
-Reward redemption locks the single wallet row with `SELECT ... FOR UPDATE` inside one database transaction. The balance deduction and redemption insert either both commit or both roll back, preventing concurrent requests from overspending the same wallet balance.
+The source JSON contains duplicate transaction IDs, so I did not use the source `id` as the database primary key. I use an internal database ID as the primary key and keep the original JSON ID as `source_transaction_id` with an index.
 
-## Frontend State Management
+This allows duplicate source records to be preserved instead of being rejected during seeding.
 
-The single dashboard page uses local React state and a centralized typed API client. This keeps the assignment focused without adding a global-state dependency. Transaction requests are aborted when filters change, and search waits 300ms before requesting the API.
+## Financial Amounts
 
-## Chart Aggregation Endpoints
+I store transaction amounts using PostgreSQL `NUMERIC(14,2)` and normalize them with Python `Decimal`. I chose this instead of floating-point values because these are financial amounts and should not be affected by floating-point rounding.
 
-Charts use dedicated analytics routes backed by PostgreSQL `GROUP BY` queries, rather than transferring 10,000 records to the browser. A small summary route supplies the top metrics with the same server-side aggregation approach.
+I also kept negative amounts because they exist in the supplied source data rather than silently changing them.
 
-## Responsive Table
+## Timestamp Normalization
 
-The transaction table remains a semantic native HTML table. At narrow viewport widths its containing region scrolls horizontally, preserving compact, readable financial columns while keeping the page itself within the viewport.
+The source contains several timestamp formats, including ISO timestamps, date/time strings, date-only values, and epoch milliseconds.
+
+I normalize these during seeding and store them as timezone-aware PostgreSQL timestamps. Values that contain an explicit timezone are converted to UTC. Values without timezone information are treated as UTC because the source does not provide a timezone.
+
+## Source Data Normalization
+
+I kept the original JSON unchanged and perform normalization during the seed process.
+
+The seed pipeline converts numeric amount strings to `Decimal`, normalizes statuses, and converts null, empty, or missing categories to SQL `NULL`.
+
+If a required value cannot be safely normalized, the seed process stops and reports the record index, source ID, and field that caused the problem.
+
+## Database Tables
+
+I created four main tables:
+
+- `transactions`
+- `rewards`
+- `wallets`
+- `redemptions`
+
+The `redemptions.reward_id` column references `rewards.id`.
+
+The assignment does not require user authentication, so I kept a single demo wallet rather than adding unnecessary user/account tables.
+
+## Deterministic Seeding
+
+The seed script validates the source data before changing the database. It then clears the application tables, resets their identities, inserts the normalized transactions and demo reward data, and validates the resulting counts.
+
+This makes it possible to rerun the seed without accumulating duplicate data.
+
+## Safe Transaction Queries
+
+The transaction API performs filtering, searching, sorting, and pagination directly in PostgreSQL through SQLAlchemy.
+
+The API uses an allowlist for sortable columns instead of accepting arbitrary column names from the request.
+
+## Atomic Reward Redemption
+
+For redemption, I lock the wallet row using `SELECT ... FOR UPDATE` inside a database transaction.
+
+The balance deduction and redemption record are created in the same transaction. This means either both operations succeed or neither is saved, which prevents the wallet from being deducted without a corresponding redemption record.
+
+## Frontend State
+
+I used local React state for the dashboard instead of adding Redux or another global state library. The application is primarily a single dashboard, so global state would add unnecessary complexity.
+
+The frontend uses a typed API client for backend communication. Transaction requests are also cancelled when filters change, and search requests use a 300ms debounce.
+
+## Analytics
+
+I created separate analytics endpoints for the dashboard summary, category spending, and monthly spending.
+
+The aggregation is performed in PostgreSQL using `GROUP BY` queries instead of sending all 10,000 transactions to the browser and calculating everything there.
+
+## Responsive Transaction Table
+
+I kept the transaction table as a normal semantic HTML table. On smaller screens, the table's container can scroll horizontally so that the financial columns remain readable without making the entire page wider than the viewport.

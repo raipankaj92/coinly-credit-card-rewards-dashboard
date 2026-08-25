@@ -1,108 +1,62 @@
 # Coinly
 
-Coinly is a planned consumer credit-card bill payment and rewards dashboard for viewing spending, earning coins on successful payments, and redeeming rewards.
+Coinly is a consumer credit-card bill payment and rewards dashboard. It allows users to view their spending, analyze transactions, track their coin balance, and redeem available rewards.
 
-## Stack
+## Tech Stack
 
-- Frontend: Next.js App Router, React, TypeScript, and Tailwind CSS
-- Analytics visualization: Recharts
-- Backend: Python, FastAPI, Pydantic, SQLAlchemy 2.x, and a PostgreSQL-compatible psycopg driver
-- Database: PostgreSQL 16+ (PostgreSQL 18 preferred)
+- **Frontend:** Next.js App Router, React, TypeScript, Tailwind CSS
+- **Charts:** Recharts
+- **Backend:** Python, FastAPI, Pydantic, SQLAlchemy 2.x, psycopg
+- **Database:** PostgreSQL
 
-## Planned Architecture
+## Architecture
 
-The frontend and backend will remain separate applications. The FastAPI backend will expose route modules that call business services, which use repositories for PostgreSQL access. The frontend will use reusable components and server-side transaction querying for pagination, filtering, sorting, and search. The transaction table will be hand-built with native HTML and CSS.
+The frontend and backend are separate applications.
+
+The Next.js frontend handles the dashboard UI, transaction browsing, filters, charts, and rewards interactions. The FastAPI backend handles API requests, business logic, PostgreSQL queries, analytics, and reward redemption.
+
+Transaction filtering, searching, sorting, and pagination are handled on the server so the browser does not need to load all 10,000 transactions at once.
+
+The transaction table uses a native HTML table instead of a table library.
 
 ## Current Status
 
-The Coinly dashboard is complete for local use. It provides a responsive Next.js financial dashboard, server-side transaction browsing, transaction detail modal, live aggregate charts, and server-confirmed reward redemption. It has not been deployed.
+The Coinly dashboard is complete and has been tested locally.
 
-See [database/DATA_QUALITY.md](database/DATA_QUALITY.md), [ASSUMPTIONS.md](ASSUMPTIONS.md), and [DECISIONS.md](DECISIONS.md) for the current groundwork.
+Implemented features include:
 
-## PostgreSQL Setup and Seed
+- Responsive financial dashboard
+- PostgreSQL-backed transaction browsing
+- Server-side search, filtering, sorting, and pagination
+- Transaction detail modal
+- Spending analytics and charts
+- Wallet balance
+- Rewards catalogue
+- Server-confirmed reward redemption
+- Loading, empty, and error states
 
-Prerequisites:
+There is currently no deployed/hosted environment.
+
+For more details about the data and implementation decisions, see:
+
+- [database/DATA_QUALITY.md](database/DATA_QUALITY.md)
+- [ASSUMPTIONS.md](ASSUMPTIONS.md)
+- [DECISIONS.md](DECISIONS.md)
+
+## PostgreSQL Setup
+
+### Prerequisites
 
 - Python 3.11+
 - PostgreSQL 16+
+- Node.js 20+
 
-Create a PostgreSQL database, then configure `DATABASE_URL` using [`backend/.env.example`](backend/.env.example) as the format reference. Do not commit a local `.env` file or credentials.
+Create a PostgreSQL database named `coinly` and configure `DATABASE_URL`.
 
-From the project root, create a virtual environment and install the backend dependencies:
+Use `backend/.env.example` as the format reference. Do not commit local credentials or `.env` files.
+
+From the project root:
 
 ```powershell
 python -m venv backend/.venv
 backend/.venv/Scripts/python -m pip install -r backend/requirements.txt
-```
-
-Set the connection URL and run the one-command schema initialization and deterministic seed:
-
-```powershell
-$env:DATABASE_URL = "postgresql+psycopg://username:password@localhost:5432/coinly"
-backend/.venv/Scripts/python backend/scripts/seed.py
-```
-
-The command creates the `transactions`, `rewards`, `wallets`, and `redemptions` tables, truncates the application tables on every rerun, resets their identities, and inserts exactly 10,000 source transactions, five rewards, and one wallet. It validates counts before committing the transaction. It never modifies the supplied JSON.
-
-Run normalization tests from the project root with:
-
-```powershell
-backend/.venv/Scripts/python -m unittest discover -s backend/tests -p "test_*.py"
-```
-
-## API
-
-Start the backend from the project root after setting `DATABASE_URL`:
-
-```powershell
-backend/.venv/Scripts/python -m uvicorn app.main:app --app-dir backend --reload
-```
-
-The API is available at `http://127.0.0.1:8000` and permits the local frontend origin `http://localhost:3000`.
-
-- `GET /health` returns the API health status.
-- `GET /api/transactions` supports `page`, `page_size`, `search`, `category`, `status`, `min_amount`, `max_amount`, `start_date`, `end_date`, `sort_by` (`timestamp` or `amount`), and `sort_order` (`asc` or `desc`).
-- `GET /api/transactions/{transaction_id}` returns a single transaction or `404`.
-- `GET /api/wallet` returns the single demo wallet.
-- `GET /api/rewards` returns active rewards.
-- `POST /api/rewards/{reward_id}/redeem` locks the wallet row, checks its balance, inserts a redemption, and updates the balance atomically. It returns `404` for missing/inactive rewards or a missing wallet and `409` for insufficient coins.
-- `GET /api/analytics/summary` returns signed total spending, successful-transaction count, and total transaction count.
-- `GET /api/analytics/category-spending` returns signed spending totals grouped by category.
-- `GET /api/analytics/monthly-spending` returns signed spending totals grouped by calendar month.
-
-## Frontend Setup
-
-Prerequisites: Node.js 20+ and a running backend API.
-
-```powershell
-cd frontend
-npm install
-$env:NEXT_PUBLIC_API_URL = "http://localhost:8000"
-npm run dev
-```
-
-Open `http://localhost:3000`. `NEXT_PUBLIC_API_URL` is optional and defaults to `http://localhost:8000` for local development. The included [`frontend/.env.example`](frontend/.env.example) shows the variable name; do not commit credentials or a local environment file.
-
-For a production check:
-
-```powershell
-cd frontend
-npm run build
-```
-
-## Completed Features
-
-- Responsive dashboard from 360px through desktop widths.
-- Native HTML transaction table with debounced merchant/source-ID search, combined filters, sorting, server-side pagination, keyboard row access, and detail modal.
-- PostgreSQL-backed category/monthly charts that focus the transaction table when selected.
-- Rewards catalogue, confirmation flow, server-confirmed wallet refresh, and clear redemption failure states.
-- Loading, empty, and error states across data-dependent areas.
-
-## Known Issues
-
-- There is no deployed environment or hosted URL.
-- Aggregate dashboard metrics and charts intentionally represent all transactions; table filters do not currently recompute aggregate endpoints.
-
-## Source Inputs
-
-The supplied PDF is the authoritative assignment specification. The supplied JSON remains unchanged and will be normalized by the Stage 2 seed pipeline.
