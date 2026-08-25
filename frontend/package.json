@@ -2,7 +2,7 @@
   "name": "coinly-frontend",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node scripts/clean-next.mjs && next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
