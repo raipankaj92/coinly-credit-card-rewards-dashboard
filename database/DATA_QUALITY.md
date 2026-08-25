@@ -14,7 +14,7 @@ Inspected on 2026-08-25 from the supplied `transactions (2) (1).json`. The sourc
 ## Distinct Categorical Values
 
 - Statuses: `FAILED`, `PENDING`, `SUCCESS`
-- Categories: 10 named values: `Shopping` (1,209), `Travel` (1,213), `Utilities` (1,014), `Food & Dining` (1,009), `Health` (998), `Education` (992), `Entertainment` (983), `Groceries` (979), `Fuel` (780), and `Insurance` (623). There are also 150 `null` category values and 50 empty-string (`""`) category values.
+- Categories: 10 named values: `Shopping` (1,209), `Travel` (1,213), `Utilities` (1,014), `Food & Dining` (1,009), `Health` (998), `Education` (992), `Entertainment` (983), `Groceries` (979), `Fuel` (780), and `Insurance` (623). There are also 100 explicit `null` category values, 50 empty-string (`""`) category values, and 50 records where the `category` key is absent.
 - Payment methods: `Credit Card`, `Debit Card`, `Netbanking`, `UPI`
 
 ## Field Completeness and Runtime Types
@@ -24,7 +24,7 @@ Inspected on 2026-08-25 from the supplied `transactions (2) (1).json`. The sourc
 | `id` | 0 | string | 9,960 |
 | `timestamp` | 0 | string, integer | 9,611 |
 | `merchant` | 0 | string | 49 |
-| `category` | 200 (150 `null`, 50 empty string) | string, null | 10 named categories |
+| `category` | 200 (100 `null`, 50 empty string, 50 absent) | string, null, absent | 10 named categories |
 | `amount` | 0 | decimal number, string | 9,422 |
 | `currency` | 0 | string | 1 |
 | `status` | 0 | string | 3 |
@@ -60,3 +60,11 @@ There are 40 duplicate-ID groups, all observed as two records per group. Example
 ## Normalization Notes
 
 The source data is usable for analysis but is not uniformly typed or clean enough to insert blindly into a strict relational schema. Stage 2 should normalize timestamps and amounts, handle blank categories, make duplicate handling deterministic, and record any rejected or transformed rows. No normalization has been performed in Stage 1.
+
+## Stage 2 Handling
+
+- The seed pipeline preserves every source occurrence by using an internal database primary key and keeping the original ID in a non-unique indexed `source_transaction_id` column.
+- Null, empty-string, and absent categories are normalized to SQL `NULL`.
+- Amounts are converted to `Decimal` and stored as fixed-precision `NUMERIC(14,2)`; negative values are retained.
+- ISO-like, `DD/MM/YYYY HH:MM:SS`, date-only, and epoch-millisecond timestamps are normalized to timezone-aware UTC timestamps. An unsupported value fails the seed with record context.
+- Statuses are normalized to the supported uppercase values. The protected source JSON is never modified.

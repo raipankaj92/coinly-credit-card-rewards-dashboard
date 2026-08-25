@@ -24,6 +24,30 @@ Keep the Next.js frontend and FastAPI backend as separate applications. This pre
 
 Transaction filtering, merchant search, sorting, and pagination are planned for the backend. Server-side querying avoids shipping all approximately 10,000 rows to the browser and gives the table a predictable performance path.
 
-## Stage 1 Scope Boundary
+## Internal Transaction Primary Key
 
-Stage 1 establishes structure and documents facts only. The relational schema, seed script, routes, services, repositories, and UI will be implemented incrementally in later stages.
+Use an internal PostgreSQL primary key for `transactions` and store the JSON `id` as a non-unique, indexed `source_transaction_id`. The source contains duplicate IDs, so treating it as a primary key would discard or reject legitimate source occurrences.
+
+## Decimal Financial Amounts
+
+Store transaction amounts as `NUMERIC(14,2)` and normalize source values with Python `Decimal`. This safely accommodates the observed `999999999` maximum without binary floating-point rounding and retains negative source amounts.
+
+## Timezone-Aware Timestamp Normalization
+
+Store timestamps as PostgreSQL timezone-aware timestamps. ISO values preserve their offset and normalize to UTC; epoch milliseconds convert to UTC; date-only and source local-looking values are interpreted as UTC because the source provides no timezone.
+
+## Seed-Time Source Normalization
+
+Normalize source records in the seed pipeline rather than editing the protected JSON. The seed converts numeric strings to `Decimal`, normalizes statuses, converts null, empty, and absent categories to SQL `NULL`, and fails with a record index, source ID, and field name if a value cannot be safely normalized.
+
+## PostgreSQL Foundation
+
+Use SQLAlchemy metadata to create the `transactions`, `rewards`, `wallets`, and `redemptions` tables. `redemptions.reward_id` is a foreign key to `rewards.id`; the wallet is intentionally a single demo wallet because the assignment does not require authentication. The transaction internal ID uses PostgreSQL `BIGSERIAL` semantics through SQLAlchemy's `BigInteger` primary key.
+
+## Deterministic Reseeding
+
+The seed command validates all source records before truncating application tables. It then truncates, resets identities, inserts the full dataset and demo records, and validates counts in one PostgreSQL transaction. This prevents accumulated duplicate imports on rerun.
+
+## Stage Scope Boundary
+
+Stage 2 implements only the PostgreSQL foundation and seed pipeline. API routes, services for HTTP workflows, and UI remain for later stages.
