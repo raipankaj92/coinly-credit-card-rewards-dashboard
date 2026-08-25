@@ -2,10 +2,10 @@
 
 Coinly is a planned consumer credit-card bill payment and rewards dashboard for viewing spending, earning coins on successful payments, and redeeming rewards.
 
-## Planned Stack
+## Stack
 
 - Frontend: Next.js App Router, React, TypeScript, and Tailwind CSS
-- Planned analytics visualization: Recharts (not installed in Stage 1)
+- Analytics visualization: Recharts
 - Backend: Python, FastAPI, Pydantic, SQLAlchemy 2.x, and a PostgreSQL-compatible psycopg driver
 - Database: PostgreSQL 16+ (PostgreSQL 18 preferred)
 
@@ -15,9 +15,7 @@ The frontend and backend will remain separate applications. The FastAPI backend 
 
 ## Current Status
 
-Stage 3 backend API is complete: transaction browsing, wallet retrieval, reward catalogue, and atomic reward redemption are available over FastAPI.
-
-Not implemented yet: frontend application, transaction table UI, analytics, charts, deployment, and demo video.
+The Coinly dashboard is complete for local use. It provides a responsive Next.js financial dashboard, server-side transaction browsing, transaction detail modal, live aggregate charts, and server-confirmed reward redemption. It has not been deployed.
 
 See [database/DATA_QUALITY.md](database/DATA_QUALITY.md), [ASSUMPTIONS.md](ASSUMPTIONS.md), and [DECISIONS.md](DECISIONS.md) for the current groundwork.
 
@@ -68,6 +66,42 @@ The API is available at `http://127.0.0.1:8000` and permits the local frontend o
 - `GET /api/wallet` returns the single demo wallet.
 - `GET /api/rewards` returns active rewards.
 - `POST /api/rewards/{reward_id}/redeem` locks the wallet row, checks its balance, inserts a redemption, and updates the balance atomically. It returns `404` for missing/inactive rewards or a missing wallet and `409` for insufficient coins.
+- `GET /api/analytics/summary` returns signed total spending, successful-transaction count, and total transaction count.
+- `GET /api/analytics/category-spending` returns signed spending totals grouped by category.
+- `GET /api/analytics/monthly-spending` returns signed spending totals grouped by calendar month.
+
+## Frontend Setup
+
+Prerequisites: Node.js 20+ and a running backend API.
+
+```powershell
+cd frontend
+npm install
+$env:NEXT_PUBLIC_API_URL = "http://localhost:8000"
+npm run dev
+```
+
+Open `http://localhost:3000`. `NEXT_PUBLIC_API_URL` is optional and defaults to `http://localhost:8000` for local development. The included [`frontend/.env.example`](frontend/.env.example) shows the variable name; do not commit credentials or a local environment file.
+
+For a production check:
+
+```powershell
+cd frontend
+npm run build
+```
+
+## Completed Features
+
+- Responsive dashboard from 360px through desktop widths.
+- Native HTML transaction table with debounced merchant/source-ID search, combined filters, sorting, server-side pagination, keyboard row access, and detail modal.
+- PostgreSQL-backed category/monthly charts that focus the transaction table when selected.
+- Rewards catalogue, confirmation flow, server-confirmed wallet refresh, and clear redemption failure states.
+- Loading, empty, and error states across data-dependent areas.
+
+## Known Issues
+
+- There is no deployed environment or hosted URL.
+- Aggregate dashboard metrics and charts intentionally represent all transactions; table filters do not currently recompute aggregate endpoints.
 
 ## Source Inputs
 

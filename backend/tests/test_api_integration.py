@@ -18,6 +18,7 @@ if str(BACKEND_ROOT) not in sys.path:
 from app.core.database import get_engine, get_session_factory
 from app.main import app
 from app.models import Reward
+from app.repositories.analytics_repository import AnalyticsRepository
 from app.repositories.transaction_repository import TransactionQuery, TransactionRepository
 from app.repositories.wallet_repository import WalletRepository
 from app.services.reward_service import InsufficientBalanceError, RewardNotFoundError, RewardService
@@ -38,6 +39,15 @@ class ApiDatabaseIntegrationTests(unittest.TestCase):
         self.assertEqual(total, 8_800)
         self.assertEqual(len(records), 3)
         self.assertTrue(all(record.status == "SUCCESS" for record in records))
+
+    def test_analytics_are_database_aggregations(self) -> None:
+        with self.session_factory() as session:
+            categories = AnalyticsRepository.category_spending(session)
+            months = AnalyticsRepository.monthly_spending(session)
+        self.assertTrue(categories)
+        self.assertTrue(months)
+        self.assertTrue(all(category and isinstance(total, Decimal) for category, total in categories))
+        self.assertTrue(all(len(month) == 7 and isinstance(total, Decimal) for month, total in months))
 
     def test_nonexistent_reward_is_rejected(self) -> None:
         with self.session_factory() as session:
@@ -87,7 +97,7 @@ class ApiWiringTests(unittest.TestCase):
     def test_expected_routes_are_registered(self) -> None:
         routes = set(app.openapi()["paths"])
         self.assertTrue(
-            {"/", "/health", "/api/transactions", "/api/transactions/{transaction_id}", "/api/wallet", "/api/rewards", "/api/rewards/{reward_id}/redeem"}.issubset(routes)
+            {"/", "/health", "/api/transactions", "/api/transactions/{transaction_id}", "/api/wallet", "/api/rewards", "/api/rewards/{reward_id}/redeem", "/api/analytics/summary", "/api/analytics/category-spending", "/api/analytics/monthly-spending"}.issubset(routes)
         )
 
 

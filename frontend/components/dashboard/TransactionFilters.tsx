@@ -1,0 +1,13 @@
+"use client";
+
+import { FilterX, Search } from "lucide-react";
+import type { TransactionFilters } from "@/lib/types";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
+
+type Props = { filters: TransactionFilters; categories: string[]; onChange: (changes: Partial<TransactionFilters>) => void; onClear: () => void };
+
+export function TransactionFilters({ filters, categories, onChange, onClear }: Props) {
+  return <div className="grid gap-3 border-b border-[#e1e6e2] bg-[#fbfcfa] p-4 sm:grid-cols-2 lg:grid-cols-4"><label className="relative sm:col-span-2"><span className="sr-only">Search merchant or transaction ID</span><Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-[#708079]" /><Input value={filters.search ?? ""} onChange={(event) => onChange({ search: event.target.value })} placeholder="Search merchant or transaction ID" className="pl-9" /></label><label><span className="sr-only">Category</span><Select value={filters.category ?? ""} onChange={(event) => onChange({ category: event.target.value })}><option value="">All categories</option>{categories.map((category) => <option key={category} value={category}>{category}</option>)}</Select></label><label><span className="sr-only">Status</span><Select value={filters.status ?? ""} onChange={(event) => onChange({ status: event.target.value as TransactionFilters["status"] })}><option value="">All statuses</option><option value="SUCCESS">Success</option><option value="PENDING">Pending</option><option value="FAILED">Failed</option></Select></label><label><span className="sr-only">Minimum amount</span><Input type="number" min="0" value={filters.min_amount ?? ""} onChange={(event) => onChange({ min_amount: event.target.value })} placeholder="Min amount" /></label><label><span className="sr-only">Maximum amount</span><Input type="number" min="0" value={filters.max_amount ?? ""} onChange={(event) => onChange({ max_amount: event.target.value })} placeholder="Max amount" /></label><label><span className="text-xs font-semibold text-[#66756f]">From date</span><Input type="date" value={filters.start_date ?? ""} onChange={(event) => onChange({ start_date: event.target.value })} /></label><label><span className="text-xs font-semibold text-[#66756f]">To date</span><Input type="date" value={filters.end_date ?? ""} onChange={(event) => onChange({ end_date: event.target.value })} /></label><div className="flex items-end"><Button type="button" variant="ghost" onClick={onClear} className="w-full"><FilterX className="h-4 w-4" />Clear filters</Button></div></div>;
+}

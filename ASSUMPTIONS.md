@@ -16,7 +16,9 @@
 - Coin earning for successful transactions is deferred to a later business-rule/API stage; this stage stores only the foundation required for it.
 - Rerunning the seed command deterministically truncates and reseeds the application tables inside one PostgreSQL transaction.
 
-## To Decide Later
+## Dashboard Product Decisions
 
-- The exact per-transaction coin cap and earning formula, because the brief requires a cap but does not specify its value.
-- The final transaction pagination and detail-view interaction.
+- The dashboard displays the seeded wallet balance as the source of truth. It does not calculate coins client-side or optimistically subtract them during redemption.
+- All reward eligibility is based on the last balance confirmed by the API; a failed redemption triggers a wallet refetch where possible.
+- Analytics sum signed transaction amounts. Negative amounts therefore reduce category, monthly, and overall totals, preserving the financial meaning of refunds/adjustments in the supplied data.
+- Category and monthly chart selections apply the corresponding table filter. Aggregate chart values otherwise represent the full transaction set, not the currently filtered table subset.

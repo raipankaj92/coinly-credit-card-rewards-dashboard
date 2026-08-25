@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import rewards, transactions, wallet
+from app.api import analytics, rewards, transactions, wallet
 
 app = FastAPI(title="Coinly API", version="0.1.0")
 app.add_middleware(
@@ -16,6 +16,7 @@ app.add_middleware(
 app.include_router(transactions.router)
 app.include_router(wallet.router)
 app.include_router(rewards.router)
+app.include_router(analytics.router)
 
 
 @app.get("/")

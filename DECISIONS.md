@@ -56,6 +56,14 @@ Transaction pagination, filtering, merchant/source-ID search, and sorting are im
 
 Reward redemption locks the single wallet row with `SELECT ... FOR UPDATE` inside one database transaction. The balance deduction and redemption insert either both commit or both roll back, preventing concurrent requests from overspending the same wallet balance.
 
-## Stage Scope Boundary
+## Frontend State Management
 
-Stage 3 adds the backend API only. Frontend pages, transaction-table UI, charts, and deployment remain for later stages.
+The single dashboard page uses local React state and a centralized typed API client. This keeps the assignment focused without adding a global-state dependency. Transaction requests are aborted when filters change, and search waits 300ms before requesting the API.
+
+## Chart Aggregation Endpoints
+
+Charts use dedicated analytics routes backed by PostgreSQL `GROUP BY` queries, rather than transferring 10,000 records to the browser. A small summary route supplies the top metrics with the same server-side aggregation approach.
+
+## Responsive Table
+
+The transaction table remains a semantic native HTML table. At narrow viewport widths its containing region scrolls horizontally, preserving compact, readable financial columns while keeping the page itself within the viewport.
